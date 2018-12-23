@@ -1,72 +1,62 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fallout76Proxy
 {
-    class GameManager
+    public class GameManager : IGameManager
     {
-        readonly string processName;
+        private readonly string sProcessName;
+        private volatile Process oProcess;
 
-        public GameManager(string processName)
+        public GameManager(string sProcessName)
         {
-            this.processName = processName;
+            this.sProcessName = sProcessName;
         }
 
-        public void WaitFor()
+        public async Task WaitForAsync()
         {
-            Process[] processes;
-
-            do
+            await Task.Run(() =>
             {
-                processes = Process.GetProcessesByName(processName);
-            }
-            while (processes.Count() == 0);
+                if(SpinWait.SpinUntil(() => Process.GetProcesses().Any(x => x.ProcessName == sProcessName), TimeSpan.FromMinutes(1)))
+                    oProcess = Process.GetProcesses().FirstOrDefault(x => x.ProcessName == sProcessName);
+            });
         }
 
         public void RestartAsChild()
         {
-            Process[] processes = Process.GetProcessesByName(processName);
+            var regex = new Regex("\"(.+?)\"\\s(.+)");
+            var match = regex.Match(GetCommandLine($"{sProcessName}.exe"));
 
-            if (processes.Count() == 0)
-                throw new NotStartedException($"For some reason {processName} not started.");
-
-            if (processes.Count() > 1)
-                throw new TooManyStartedException($"Too many {processName} launched. Stop others!");
-
-            Regex regex = new Regex("\"(.+?)\"\\s(.+)");
-            Match match = regex.Match(GetCommandLine($"{processName}.exe"));
-
-            processes.First().Kill();
-
-            if (match.Groups.Count == 0)
-                throw new StrangeArguments($"For some reason {processName} have no token!");
-
-            string TargetPath = match.Groups[1].Value;
-            string TargetArguments = match.Groups[2].Value;
+            oProcess.Kill();
+            var TargetPath = match.Groups[1].Value;
+            var TargetArguments = match.Groups[2].Value;
 
             Directory.SetCurrentDirectory(Path.GetDirectoryName(TargetPath));
 
-            Process process = new Process();
-            process.StartInfo.FileName = TargetPath;
-            process.StartInfo.Arguments = TargetArguments;
-            process.Start();
+            oProcess = new Process();
+            oProcess.StartInfo.FileName = TargetPath;
+            oProcess.StartInfo.Arguments = TargetArguments;
+            oProcess.Start();
         }
 
-        string GetCommandLine(string processName)
+        public string GetCommandLine(string processName)
         {
-            ManagementClass mngmtClass = new ManagementClass("Win32_Process");
-            foreach (ManagementObject o in mngmtClass.GetInstances())
+            var mngmtClass = new ManagementClass("Win32_Process");
+            foreach(var o in mngmtClass.GetInstances())
             {
-                if (o["Name"].Equals(processName))
-                {
+                if(o["Name"].Equals(processName))
                     return (string)o["CommandLine"];
-                }
             }
 
-            throw new NotStartedException($"Can't get {processName} arguments");
+            throw new SystemException($"Can't get {processName} arguments");
         }
+
+        public static bool Fallout76Exists() => Process.GetProcessesByName("Fallout76").Count() > 0;
     }
 }

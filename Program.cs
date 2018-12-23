@@ -1,67 +1,37 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Management;
+using System.Threading.Tasks;
 
 namespace Fallout76Proxy
 {
-    class BethesdaLauncherMissedException : Exception { public BethesdaLauncherMissedException(string message) : base(message) { } };
-    class NotStartedException : Exception { public NotStartedException(string message) : base(message) { } };
-    class TooManyStartedException : Exception { public TooManyStartedException(string message) : base(message) { } };
-    class StrangeArguments : Exception { public StrangeArguments(string message) : base(message) { } };
-
-    class Program
+    public static class Program
     {
-        static string GetCommandLine(string ProcessName)
+        public static async Task Launch()
         {
-            ManagementClass mngmtClass = new ManagementClass("Win32_Process");
-            foreach (ManagementObject o in mngmtClass.GetInstances())
-            {
-                if (o["Name"].Equals(ProcessName))
-                {
-                    return (string) o["CommandLine"];
-                }
-            }
-
-            throw new NotStartedException("Can't get Fallout76 arguments");
-        }
-
-        static bool Fallout76Exists()
-        {
-            Process[] fallouts76 = Process.GetProcessesByName("Fallout76");
-            return fallouts76.Count() > 0;
-        }
-
-        static void Launch()
-        {
-            if (!BethesdaLauncher.Installed())
-                throw new BethesdaLauncherMissedException("Try to reinstall bethesda launcher.");
+            if(!BethesdaLauncher.Default.IsInstalled)
+                throw new Exception("Try to reinstall bethesda launcher.");
 
             Console.WriteLine("Starting Fallout76 from BethesdaLauncher.");
 
-            BethesdaLauncher.Start(BethesdaGames.Fallout76);
-
+            BethesdaLauncher.Default.Start(BethesdaGameType.Fallout76);
             Console.WriteLine("Waiting for game started.");
 
-            GameManager fallout76 = new GameManager("Fallout76");
-
-            fallout76.WaitFor();
+            var fallout76 = new GameManager("Fallout76");
+            await fallout76.WaitForAsync();
 
             Console.WriteLine("Restarting Fallout 76 as child process.");
-
             fallout76.RestartAsChild();
 
             Console.WriteLine("Closing BethesdaLauncher.");
-            BethesdaLauncher.Stop();
+            BethesdaLauncher.Default.Stop();
         }
 
-        static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             try
             {
-                Launch();
+                await Launch();
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 Console.WriteLine(e.ToString());
                 Console.WriteLine("\nPress any key to exit...");
@@ -70,3 +40,4 @@ namespace Fallout76Proxy
         }
     }
 }
+

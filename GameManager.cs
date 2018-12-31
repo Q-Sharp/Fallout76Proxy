@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Fallout76Proxy
+namespace Fallout76.Proxy
 {
     public class GameManager : IGameManager
     {
@@ -19,30 +19,39 @@ namespace Fallout76Proxy
             this.sProcessName = sProcessName;
         }
 
-        public async Task WaitForAsync()
+        public async Task WaitForProcessAsync()
         {
-            await Task.Run(() =>
+            oProcess = await Task.Run(() =>
             {
-                if(SpinWait.SpinUntil(() => Process.GetProcesses().Any(x => x.ProcessName == sProcessName), TimeSpan.FromMinutes(1)))
-                    oProcess = Process.GetProcesses().FirstOrDefault(x => x.ProcessName == sProcessName);
+                Process oFound = null;
+                SpinWait.SpinUntil(() =>
+                {
+                    oFound = Process.GetProcesses().FirstOrDefault(x => x.ProcessName == sProcessName);
+                    return oFound != null;
+                }, TimeSpan.FromMinutes(5));
+
+                return oFound;
             });
         }
 
-        public void RestartAsChild()
+        public Task RestartAsChild()
         {
-            var regex = new Regex("\"(.+?)\"\\s(.+)");
-            var match = regex.Match(GetCommandLine($"{sProcessName}.exe"));
+            return Task.Run(() =>
+            {
+                var regex = new Regex("\"(.+?)\"\\s(.+)");
+                var match = regex.Match(GetCommandLine($"{sProcessName}.exe"));
 
-            oProcess.Kill();
-            var TargetPath = match.Groups[1].Value;
-            var TargetArguments = match.Groups[2].Value;
+                oProcess?.Kill();
+                var TargetPath = match.Groups[1].Value;
+                var TargetArguments = match.Groups[2].Value;
 
-            Directory.SetCurrentDirectory(Path.GetDirectoryName(TargetPath));
+                Directory.SetCurrentDirectory(Path.GetDirectoryName(TargetPath));
 
-            oProcess = new Process();
-            oProcess.StartInfo.FileName = TargetPath;
-            oProcess.StartInfo.Arguments = TargetArguments;
-            oProcess.Start();
+                oProcess = new Process();
+                oProcess.StartInfo.FileName = TargetPath;
+                oProcess.StartInfo.Arguments = TargetArguments;
+                oProcess.Start();
+            });
         }
 
         public string GetCommandLine(string processName)
@@ -54,7 +63,7 @@ namespace Fallout76Proxy
                     return (string)o["CommandLine"];
             }
 
-            throw new SystemException($"Can't get {processName} arguments");
+            throw new SystemException(string.Format(Fallout76ProxyResource.Arguments, processName));
         }
 
         public static bool Fallout76Exists() => Process.GetProcessesByName("Fallout76").Count() > 0;

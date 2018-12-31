@@ -1,27 +1,27 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Fallout76Proxy
+namespace Fallout76.Proxy
 {
     public static class Program
     {
-        public static async Task Launch()
+        private static async Task Launch()
         {
             if(!BethesdaLauncher.Default.IsInstalled)
-                throw new Exception("Try to reinstall bethesda launcher.");
+                throw new Exception(Fallout76ProxyResource.Reinstall);
 
-            Console.WriteLine("Starting Fallout76 from BethesdaLauncher.");
+            Console.WriteLine(Fallout76ProxyResource.Starting);
 
             BethesdaLauncher.Default.Start(BethesdaGameType.Fallout76);
-            Console.WriteLine("Waiting for game started.");
+            Console.WriteLine(Fallout76ProxyResource.Wait);
 
             var fallout76 = new GameManager("Fallout76");
-            await fallout76.WaitForAsync();
+            await fallout76.WaitForProcessAsync();
 
-            Console.WriteLine("Restarting Fallout 76 as child process.");
-            fallout76.RestartAsChild();
+            Console.WriteLine(Fallout76ProxyResource.Restart);
+            await fallout76.RestartAsChild();
 
-            Console.WriteLine("Closing BethesdaLauncher.");
+            Console.WriteLine(Fallout76ProxyResource.Close);
             BethesdaLauncher.Default.Stop();
         }
 
@@ -34,7 +34,11 @@ namespace Fallout76Proxy
             catch(Exception e)
             {
                 Console.WriteLine(e.ToString());
-                Console.WriteLine("\nPress any key to exit...");
+            }
+            finally
+            {
+                Console.WriteLine();
+                Console.WriteLine(Fallout76ProxyResource.Exit);
                 Console.Read();
             }
         }

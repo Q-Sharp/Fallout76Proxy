@@ -1,11 +1,11 @@
 ﻿using System.Threading.Tasks;
 
-namespace Fallout76Proxy
+namespace Fallout76.Proxy
 {
     public interface IGameManager
     {
         string GetCommandLine(string processName);
-        void RestartAsChild();
-        Task WaitForAsync();
+        Task RestartAsChild();
+        Task WaitForProcessAsync();
     }
 }

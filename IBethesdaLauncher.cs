@@ -1,4 +1,4 @@
-﻿namespace Fallout76Proxy
+﻿namespace Fallout76.Proxy
 {
     public interface IBethesdaLauncher
     {

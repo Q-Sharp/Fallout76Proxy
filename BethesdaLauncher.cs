@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 
-namespace Fallout76Proxy
+namespace Fallout76.Proxy
 {
     public class BethesdaLauncher : IBethesdaLauncher
     {
@@ -12,6 +12,6 @@ namespace Fallout76Proxy
         public bool IsActive => Process.GetProcessesByName("BethesdaNetLauncher").Any();
 
         public void Start(BethesdaGameType GameIdx) => Process.Start($"bethesdanet://run/{(int)GameIdx}");
-        public void Stop() => Process.GetProcessesByName("BethesdaNetLauncher").FirstOrDefault()?.Kill();
+        public void Stop() => Process.GetProcessesByName("BethesdaNetLauncher")?.ToList().ForEach(x => x.Kill());
     }
 }

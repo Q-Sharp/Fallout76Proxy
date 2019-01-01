@@ -5,21 +5,21 @@ namespace Fallout76.Proxy
 {
     public static class Program
     {
-        private static async Task Launch()
+        private static async Task Launch(BethesdaGameType eGameType)
         {
             if(!BethesdaLauncher.Default.IsInstalled)
                 throw new Exception(Fallout76ProxyResource.Reinstall);
 
             Console.WriteLine(Fallout76ProxyResource.Starting);
 
-            BethesdaLauncher.Default.Start(BethesdaGameType.Fallout76);
+            BethesdaLauncher.Default.Start(eGameType);
             Console.WriteLine(Fallout76ProxyResource.Wait);
 
-            var fallout76 = new GameManager("Fallout76");
-            await fallout76.WaitForProcessAsync();
+            var fallout76 = new GameManager();
+            await fallout76.WaitForProcessAsync(eGameType.ToString());
 
             Console.WriteLine(Fallout76ProxyResource.Restart);
-            await fallout76.RestartAsChild();
+            await fallout76.RestartAsChild(eGameType.ToString());
 
             Console.WriteLine(Fallout76ProxyResource.Close);
             BethesdaLauncher.Default.Stop();
@@ -29,7 +29,7 @@ namespace Fallout76.Proxy
         {
             try
             {
-                await Launch();
+                await Launch(BethesdaGameType.Fallout76);
             }
             catch(Exception e)
             {

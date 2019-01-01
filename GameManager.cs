@@ -11,30 +11,23 @@ namespace Fallout76.Proxy
 {
     public class GameManager : IGameManager
     {
-        private readonly string sProcessName;
         private volatile Process oProcess;
+        private readonly Func<string, Process> GetProcess = (string pn) => Process.GetProcesses().FirstOrDefault(y => y.ProcessName == pn);
 
-        public GameManager(string sProcessName)
+        public GameManager()
         {
-            this.sProcessName = sProcessName;
         }
 
-        public async Task WaitForProcessAsync()
+        public async Task WaitForProcessAsync(string sProcessName)
         {
             oProcess = await Task.Run(() =>
             {
-                Process oFound = null;
-                SpinWait.SpinUntil(() =>
-                {
-                    oFound = Process.GetProcesses().FirstOrDefault(x => x.ProcessName == sProcessName);
-                    return oFound != null;
-                }, TimeSpan.FromMinutes(5));
-
-                return oFound;
+                SpinWait.SpinUntil(() => GetProcess(sProcessName) != null, TimeSpan.FromMinutes(5));
+                return GetProcess(sProcessName);
             });
         }
 
-        public Task RestartAsChild()
+        public Task RestartAsChild(string sProcessName)
         {
             return Task.Run(() =>
             {
@@ -54,16 +47,16 @@ namespace Fallout76.Proxy
             });
         }
 
-        public string GetCommandLine(string processName)
+        public string GetCommandLine(string sProcessName)
         {
             var mngmtClass = new ManagementClass("Win32_Process");
             foreach(var o in mngmtClass.GetInstances())
             {
-                if(o["Name"].Equals(processName))
+                if(o["Name"].Equals(sProcessName))
                     return (string)o["CommandLine"];
             }
 
-            throw new SystemException(string.Format(Fallout76ProxyResource.Arguments, processName));
+            throw new SystemException(string.Format(Fallout76ProxyResource.Arguments, sProcessName));
         }
 
         public static bool Fallout76Exists() => Process.GetProcessesByName("Fallout76").Count() > 0;

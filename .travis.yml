@@ -1,4 +1,2 @@
 language: csharp
 solution: Fallout76Proxy.sln
-script:
-    - xbuild /p:Configuration=Release Fallout76Proxy.sln.sln

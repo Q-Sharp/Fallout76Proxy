@@ -1,4 +1,6 @@
-## Fallout 76 with Steam overlay
+[![Build Status](https://travis-ci.com/QoOdrink3r/Fallout76Proxy.svg?branch=master)](https://travis-ci.com/QoOdrink3r/Fallout76Proxy)
+
+# Fallout 76 with Steam overlay
 Simple way to launch Fallout 76 with steam overlay! Forget about mess with Bethesda Launcher!
 
 ### Installation:

@@ -5,7 +5,7 @@ namespace Fallout76.Proxy
     public interface IGameManager
     {
         string GetCommandLine(string sProcessName);
-        Task RestartAsChild(string sProcessName);
-        Task WaitForProcessAsync(string sProcessName);
+        void RestartAsChild(string sProcessName);
+        void GetProcess(string sProcessName);
     }
 }

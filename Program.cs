@@ -1,45 +1,23 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Linq;
 
 namespace Fallout76.Proxy
 {
     public static class Program
     {
-        private static async Task Launch(BethesdaGameType eGameType)
-        {
-            if(!BethesdaLauncher.Default.IsInstalled)
-                throw new Exception(Fallout76ProxyResource.Reinstall);
-
-            Console.WriteLine(Fallout76ProxyResource.Starting);
-
-            BethesdaLauncher.Default.Start(eGameType);
-            Console.WriteLine(Fallout76ProxyResource.Wait);
-
-            var fallout76 = new GameManager();
-            await fallout76.WaitForProcessAsync(eGameType.ToString());
-
-            Console.WriteLine(Fallout76ProxyResource.Restart);
-            await fallout76.RestartAsChild(eGameType.ToString());
-
-            Console.WriteLine(Fallout76ProxyResource.Close);
-            BethesdaLauncher.Default.Stop();
-        }
-
-        public static async Task Main(string[] args)
+        public static void Main(string[] oArgs)
         {
             try
             {
-                await Launch(BethesdaGameType.Fallout76);
+                var eGameType = oArgs.Any() 
+                    ? (BethesdaGameType)Enum.Parse(typeof(BethesdaGameType), oArgs.FirstOrDefault(), true) 
+                    : BethesdaGameType.Fallout76;
+
+                new BethesdaLauncher().Launch(eGameType);
             }
             catch(Exception e)
             {
                 Console.WriteLine(e.ToString());
-            }
-            finally
-            {
-                Console.WriteLine();
-                Console.WriteLine(Fallout76ProxyResource.Exit);
-                Console.Read();
             }
         }
     }
